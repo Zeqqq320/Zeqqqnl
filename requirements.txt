@@ -33,3 +33,5 @@ websocket-client>=1.8.0,<2
 typing-extensions>=4.16.0,<5
 # WebUI 播放管道(B站 ytdlp: 通道的流式管道与直链实时解析); pip 安装自带同名 CLI 二进制
 yt-dlp>=2026.8.19
+# WebUI 后端(mountainriverechoes.py 基于 Flask); 原 requirements 漏声明, 本地部署必须补
+Flask>=3.0,<4

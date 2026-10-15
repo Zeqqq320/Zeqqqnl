@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#0A2437"/>
+      <stop offset="45%"  stop-color="#14485C"/>
+      <stop offset="100%" stop-color="#1D6E7C"/>
+    </linearGradient>
+
+    <radialGradient id="sunGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#F7B267" stop-opacity="0.55"/>
+      <stop offset="60%"  stop-color="#F7B267" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#F7B267" stop-opacity="0"/>
+    </radialGradient>
+
+    <linearGradient id="river" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#9FE0E4"/>
+      <stop offset="100%" stop-color="#3E9BA8"/>
+    </linearGradient>
+
+    <linearGradient id="ridgeBack" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#2F8194"/>
+      <stop offset="100%" stop-color="#236A7C"/>
+    </linearGradient>
+    <linearGradient id="ridgeMid" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#1D5A6B"/>
+      <stop offset="100%" stop-color="#164A59"/>
+    </linearGradient>
+    <linearGradient id="ridgeFront" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#123C4A"/>
+      <stop offset="100%" stop-color="#0C2C38"/>
+    </linearGradient>
+
+    <clipPath id="squircle">
+      <rect x="100" y="100" width="824" height="824" rx="185" ry="185"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#squircle)">
+    <!-- 天 -->
+    <rect x="100" y="100" width="824" height="824" fill="url(#sky)"/>
+
+    <!-- 日晕 -->
+    <circle cx="700" cy="352" r="250" fill="url(#sunGlow)"/>
+    <circle cx="700" cy="352" r="92" fill="#F7B267"/>
+
+    <!-- 远山 -->
+    <path d="M100 622 L262 452 L372 566 L520 400 L648 552 L760 470 L924 630 L924 800 L100 800 Z"
+          fill="url(#ridgeBack)" opacity="0.62"/>
+
+    <!-- 中山 -->
+    <path d="M100 700 L232 566 L336 660 L470 520 L604 664 L716 592 L924 716 L924 820 L100 820 Z"
+          fill="url(#ridgeMid)" opacity="0.88"/>
+
+    <!-- 近山 -->
+    <path d="M100 780 L214 676 L330 760 L452 646 L586 764 L700 700 L924 796 L924 860 L100 860 Z"
+          fill="url(#ridgeFront)"/>
+
+    <!-- 江面 -->
+    <path d="M100 812 C 220 786, 320 838, 442 816 C 566 794, 660 842, 786 818 C 852 806, 894 812, 924 818 L924 924 L100 924 Z"
+          fill="url(#river)"/>
+
+    <!-- 水波 -->
+    <g fill="none" stroke="#EAFBFC" stroke-linecap="round" opacity="0.55">
+      <path d="M188 866 C 262 846, 334 886, 408 866" stroke-width="12"/>
+      <path d="M520 892 C 594 872, 666 912, 740 892" stroke-width="12"/>
+      <path d="M300 902 C 356 888, 412 916, 468 902" stroke-width="9" opacity="0.7"/>
+    </g>
+
+    <!-- 音符 -->
+    <g fill="#FFFFFF" fill-opacity="0.94">
+      <ellipse cx="322" cy="512" rx="56" ry="43" transform="rotate(-20 322 512)"/>
+      <rect x="366" y="352" width="17" height="168" rx="8.5"/>
+      <path d="M373 352 C 424 366, 450 400, 448 448 C 436 410, 412 384, 373 372 Z"/>
+    </g>
+  </g>
+
+  <!-- 顶部高光 -->
+  <g clip-path="url(#squircle)">
+    <rect x="100" y="100" width="824" height="824" fill="none"
+          stroke="#FFFFFF" stroke-opacity="0.10" stroke-width="6"/>
+  </g>
+</svg>

@@ -29,11 +29,15 @@ _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))   # 仓库根(
 from musicdl import musicdl
 from musicdl.modules import MusicClientBuilder, LyricSearchClient
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-DOWNLOAD_DIR = BASE_DIR / 'downloads'
+BASE_DIR = Path(__file__).resolve().parent.parent          # 资源根(源码/打包后同为只读语义)
+# 可写数据根: 打包成独立 App 后资源目录不可写, 用 MRE_DATA_DIR 把 downloads/曲库/UI 态
+# 重定向到用户数据目录。未设置该变量时 DATA_DIR == BASE_DIR, 与改造前行为完全一致。
+DATA_DIR = Path(os.environ.get('MRE_DATA_DIR') or BASE_DIR)
+DOWNLOAD_DIR = DATA_DIR / 'downloads'
 DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-HOST, PORT = '127.0.0.1', 8766
+HOST = os.environ.get('MRE_HOST') or '127.0.0.1'
+PORT = int(os.environ.get('MRE_PORT') or '8766')
 # 域名 → 客户端 source (用于 /api/playlist 慢速解析时按 URL 选源)
 HOST_HINTS = [('kugou', 'KugouMusicClient'), ('kuwo', 'KuwoMusicClient'), ('y.qq.com', 'QQMusicClient'), ('migu', 'MiguMusicClient'), ('qishui', 'SodaMusicClient'), ('douyin', 'SodaMusicClient')]
 # CDN 防盗链 Referer: 按直链 URL 域名匹配, 给出对应官方域名, 缺了必 403。
@@ -189,6 +193,11 @@ ETHNIC_GROUPS = []
 for _i, _name in enumerate(ETHNIC_BASE):
     _kws = [f'{_name}民歌', f'{_name}歌曲'] + ETHNIC_EXTRA_KW.get(_name, []) + ETHNIC_ARTISTS.get(_name, [])
     ETHNIC_GROUPS.append({'key': f'e{_i:02d}', 'name': _name, 'kws': _kws, 'ci': _i % 10})
+# 独立包精简开关: 设置 MRE_ONLY_ETHNIC 后只保留指定的民族分组(逗号分隔 key; 空值=不展示任何民族,
+# 只留专题曲库)。未设置该变量时仍是 56 个民族全量, 行为不变。
+if 'MRE_ONLY_ETHNIC' in os.environ:
+    _only_keys = {k.strip() for k in os.environ['MRE_ONLY_ETHNIC'].split(',') if k.strip()}
+    ETHNIC_GROUPS = [g for g in ETHNIC_GROUPS if g['key'] in _only_keys]
 # 汉族民间小调: 各省市民间小调搜索词(与民族音乐严格区分)
 HAN_FOLK_KWS = [
     '汉族民间小调', '汉族民歌', '中国民歌', '民间小调', '民歌小调',
@@ -542,7 +551,7 @@ def _cache_path(group_key):
 ETHNOS_SCHEMA = 2
 # 民族音乐构建音源: 实测能稳定返回中文歌曲的主力音源
 ETHNOS_SOURCES = ['MyFreeMP3MusicClient', 'MiguMusicClient', 'TwoT58MusicClient', 'KuwoMusicClient', 'KugouMusicClient', 'YinyuekuMusicClient', 'BilibiliMusicClient']
-ETHNOS_CACHE_DIR = BASE_DIR / 'webui' / 'ethnos_cache'
+ETHNOS_CACHE_DIR = DATA_DIR / 'webui' / 'ethnos_cache'
 ETHNOS_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 SINGER_CACHE_DIR = ETHNOS_CACHE_DIR / 'singers'
 SINGER_CACHE_DIR.mkdir(parents=True, exist_ok=True)
@@ -550,7 +559,7 @@ SINGER_MAX_SONGS = 300
 # UI 态持久化: 卡片/歌手拖动次序、我的歌单、隐藏曲目、民族歌手增删名单等。
 # 刻意放在 webui/ 而非 ethnos_cache/ —— 后者会被 e*.json / han_*.json 的
 # 全量扫描(_iter_ethnos_tracks/_ethnos_files_sig)当作曲库文件吃掉。
-UI_STATE_PATH = BASE_DIR / 'webui' / 'ui_state.json'
+UI_STATE_PATH = DATA_DIR / 'webui' / 'ui_state.json'
 UI_STATE_LOCK = threading.Lock()
 
 
@@ -1321,7 +1330,7 @@ def source_search_worker(job_id, source):
 # ---------------------------------------------------------------- 页面
 @app.route('/')
 def index():
-    return render_template('mountainriverechoes.html')
+    return render_template('manchu.html')
 
 
 # ---------------------------------------------------------------- 搜索 (渐进式, 逐源返回)
@@ -2085,6 +2094,156 @@ def _ytdlp_audio_pipe(watch_url):
     resp = Response(pipe_gen(), status=200, content_type='audio/mp4')
     resp.headers['Accept-Ranges'] = 'none'
     return resp
+
+
+@app.route('/api/resolve', methods=['POST'])
+def api_resolve():
+    """直链过期自愈: 按 (曲名, 歌手) 重新联网搜索, 返回可直接喂给 /api/preview 的 sid+id。
+
+    曲库里的 download_url 是抓取瞬间的 CDN 直链(酷狗/酷我等通常数小时~数天失效),
+    失效后 /api/preview 只能 502。这里按曲名重新搜一次, 命中同名(优先同歌手、时长最接近)
+    的条目注册进新会话, 前端拿新 sid+id 即能播放 —— 曲库文件本身不用改。"""
+    data = request.get_json(force=True) or {}
+    name = str(data.get('name') or '').strip()
+    singer = str(data.get('singer') or '').strip()
+    src = str(data.get('src') or '').strip()
+    try:
+        want_dur = float(data.get('dur') or 0)
+    except (TypeError, ValueError):
+        want_dur = 0.0
+    if not name:
+        return jsonify({'error': '缺少曲名'}), 400
+    touch_user_activity()
+    pref = src if src.endswith('MusicClient') else (src + 'MusicClient' if src else '')
+    order = []
+    if pref in MusicClientBuilder.REGISTERED_MODULES:
+        order.append(pref)
+    for s in (DEFAULT_SOURCES or []):
+        c = s if s.endswith('MusicClient') else f'{s}MusicClient'
+        if c not in order:
+            order.append(c)
+    try:
+        client = get_client(order)
+    except Exception as err:
+        return jsonify({'error': f'音源初始化失败: {str(err)[:80]}'}), 500
+    sid = new_session(client)
+    items = search_sessions[sid]['items']
+    target = _norm_str(_core_name(name))
+    want_singer = _norm_str(singer)
+    best = None
+    for c in order:
+        try:
+            songs = client.music_clients[c].search(keyword=name, num_threadings=5, request_overrides={}, rule={}) or []
+        except Exception:
+            continue
+        for i, s in enumerate(songs):
+            items[f'{c}#{i}'] = s
+            nm = _norm_str(_core_name(getattr(s, 'song_name', '') or ''))
+            if not nm:
+                continue
+            if not (nm == target or (target and (target in nm or nm in target))):
+                continue
+            got_singer = _norm_str(getattr(s, 'singers', '') or '')
+            singer_ok = (not want_singer) or want_singer in {'weizhigeshou'} or \
+                        (got_singer and (want_singer == got_singer or want_singer in got_singer or got_singer in want_singer))
+            try:
+                d = float(getattr(s, 'duration_s', 0) or 0)
+            except Exception:
+                d = 0.0
+            score = (0 if singer_ok else 1, abs(d - want_dur) if (d and want_dur) else 0)
+            if best is None or score < best[0]:
+                best = (score, c, i, s)
+        if best and best[0][0] == 0:
+            break
+    if not best:
+        return jsonify({'error': '未搜到可播放的替代音源'}), 404
+    _, c, i, s = best
+    return jsonify({'sid': sid, 'id': f'{c}#{i}',
+                    'name': getattr(s, 'song_name', '') or name,
+                    'singer': getattr(s, 'singers', '') or singer,
+                    'source': c.removesuffix('MusicClient'),
+                    'duration': getattr(s, 'duration_s', 0) or 0})
+
+
+PROBE_JOBS = OrderedDict()
+
+
+def _probe_worker(jid, keywords, sources, outdir):
+    """后台逐个关键词检索, 结果落盘到 outdir/NN.json。同步阻塞的 HTTP 请求会被外层
+    安全策略掐断, 所以这里走后台线程 + 前端轮询小响应的异步模式。"""
+    job = PROBE_JOBS[jid]
+    try:
+        client = get_client(sources)
+    except Exception as err:
+        job['state'] = 'error'
+        job['error'] = str(err)[:120]
+        return
+    try:
+        for i, kw in enumerate(keywords):
+            items = []
+            for s in sources:
+                try:
+                    songs = client.music_clients[s].search(keyword=kw, num_threadings=5,
+                                                           request_overrides={}, rule={}) or []
+                except Exception:
+                    songs = []
+                for sg in songs:
+                    items.append({
+                        'song_name': sg.song_name, 'singers': sg.singers, 'album': sg.album,
+                        'duration_s': sg.duration_s, 'ext': sg.ext, 'download_url': sg.download_url,
+                        'identifier': sg.identifier, 'cover_url': sg.cover_url,
+                        'protocol': sg.protocol, 'file_size_bytes': sg.file_size_bytes,
+                        'source_cn': s.removesuffix('MusicClient'), 'source': s, 'kw': kw,
+                    })
+            try:
+                with open(os.path.join(outdir, '%02d.json' % i), 'w', encoding='utf-8') as f:
+                    json.dump({'keyword': kw, 'items': items}, f, ensure_ascii=False, indent=1)
+            except Exception as err:
+                job['error'] = str(err)[:120]
+            job['done'] = i + 1
+    except Exception as err:
+        # 任何未预期异常都要收尾, 否则 job 永远停在 running, 调用方白等到超时
+        job['error'] = str(err)[:120]
+    finally:
+        job['state'] = 'done'
+
+
+@app.route('/api/probe/start', methods=['POST'])
+def api_probe_start():
+    """曲库维护用: 批量关键词检索(含 download_url), 后台执行并落盘。默认不碰 Bilibili。"""
+    data = request.get_json(force=True) or {}
+    keywords = [str(k).strip() for k in (data.get('keywords') or []) if str(k).strip()]
+    outdir = str(data.get('outdir') or '').strip()
+    sources = [s for s in (data.get('sources') or ['Netease', 'Kugou', 'Kuwo', 'Migu', 'QQ']) if s]
+    if not keywords or not outdir:
+        return jsonify({'error': '需要 keywords 与 outdir'}), 400
+    # 本接口能把任意内容写到任意路径, 必须限定在工作区内 —— 服务无鉴权, 否则等于开放本地写文件
+    outdir = os.path.abspath(os.path.expanduser(outdir))
+    _allowed = [os.path.abspath(os.path.expanduser(p)) for p in ('~/WorkBuddy', '/tmp')]
+    if not any(outdir == a or outdir.startswith(a + os.sep) for a in _allowed):
+        return jsonify({'error': 'outdir 必须位于 ~/WorkBuddy 或 /tmp 之下'}), 400
+    sources = [s if s.endswith('MusicClient') else f'{s}MusicClient' for s in sources]
+    try:
+        os.makedirs(outdir, exist_ok=True)
+    except Exception as err:
+        return jsonify({'error': f'无法创建目录: {str(err)[:80]}'}), 400
+    touch_user_activity()
+    jid = uuid.uuid4().hex[:12]
+    with state_lock:
+        PROBE_JOBS[jid] = {'total': len(keywords), 'done': 0, 'state': 'running', 'error': None}
+        while len(PROBE_JOBS) > 8:
+            PROBE_JOBS.popitem(last=False)
+    threading.Thread(target=_probe_worker, args=(jid, keywords, sources, outdir), daemon=True).start()
+    return jsonify({'job_id': jid, 'total': len(keywords)})
+
+
+@app.route('/api/probe/status')
+def api_probe_status():
+    job = PROBE_JOBS.get(request.args.get('job'))
+    if job is None:
+        return jsonify({'error': '任务不存在或已过期'}), 404
+    return jsonify({'state': job['state'], 'done': job['done'], 'total': job['total'],
+                    'error': job.get('error')})
 
 
 @app.route('/api/preview')

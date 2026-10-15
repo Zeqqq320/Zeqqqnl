@@ -120,3 +120,15 @@ probe_weixin*.py
 # 本地工具会话数据(ZCode / WorkBuddy)
 .zcode/
 .workbuddy/
+
+# === 满族音乐独立版封装 ===
+# 便携 Python 运行时(约 470MB)与构建中间产物: 不入库, 需要时用 packaging/build_app.sh 重建
+packaging/runtime/
+packaging/dist/
+packaging/dmg_src/
+packaging/.dmg_src.old*/
+packaging/.trash/
+*.dmg
+*.sparseimage
+# 曲库检索的原始候选(可重新抓取, 只保留入库脚本)
+manchu/raw/

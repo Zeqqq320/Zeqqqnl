@@ -1,0 +1,295 @@
+/* 满族音乐 · 界面样式
+   视觉母题：八旗色制 / 海东青 / 白山黑水 / 萨满神鼓 / 回纹
+   原则：有序、简约。装饰服务于信息，不做无意义的堆砌。 */
+
+:root {
+  --paper: #F5F2EA;
+  --card: #FFFFFF;
+  --line: #E3DDD0;
+  --line-soft: #EEEAE0;
+  --ink: #1B2A41;
+  --ink-2: #4C5768;
+  --muted: #8A8272;
+
+  --indigo: #24405F;
+  --gold: #B8913C;
+  --gold-soft: #F2E7C9;
+  --red: #9E2B25;
+
+  /* 八旗色 —— 用于音源标记 */
+  --f1: #E9C46A;  /* 正黄 */
+  --f2: #D4A845;  /* 镶黄 */
+  --f3: #F1EDE3;  /* 正白 */
+  --f4: #DCD6C6;  /* 镶白 */
+  --f5: #C0392B;  /* 正红 */
+  --f6: #9E2B25;  /* 镶红 */
+  --f7: #3A6EA5;  /* 正蓝 */
+  --f8: #24405F;  /* 镶蓝 */
+
+  --r: 10px;
+}
+
+/* 夜祭主题（萨满夜祭感） */
+body.night {
+  --paper: #141A24;
+  --card: #1B2431;
+  --line: #2A3444;
+  --line-soft: #222C3A;
+  --ink: #E8E3D6;
+  --ink-2: #B7B0A0;
+  --muted: #7E8773;
+  --indigo: #8FB3DA;
+  --gold: #D9B65C;
+  --gold-soft: #2E3242;
+  --red: #C25A4E;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+
+body {
+  font: 14px/1.6 -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB",
+        "Microsoft YaHei", sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  transition: background .3s, color .3s;
+}
+
+button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+input { font: inherit; color: inherit; }
+ol, ul { list-style: none; }
+
+/* ================= 骨架 ================= */
+.app { display: flex; flex-direction: column; height: 100vh; position: relative; }
+
+/* 白山黑水：底部层叠山形，播放时轻微起伏 */
+.mountains {
+  position: absolute; left: 0; right: 0; bottom: 74px; height: 118px;
+  pointer-events: none; z-index: 0; opacity: .5;
+}
+.mountains svg { width: 100%; height: 100%; display: block; }
+.mountains .m2 { transition: transform 3.5s ease-in-out; transform-origin: center bottom; }
+.playing .mountains .m2 { transform: translateY(-4px); }
+body.night .mountains { opacity: .3; }
+
+/* ================= 顶栏 ================= */
+.topbar {
+  display: flex; align-items: center; gap: 18px;
+  padding: 10px 22px; background: var(--card);
+  border-bottom: 1px solid var(--line); flex: none; z-index: 1;
+}
+
+.brand { display: flex; align-items: center; gap: 11px; flex: none; }
+.brand svg { display: block; }
+.brand-text { display: flex; flex-direction: column; line-height: 1.2; }
+/* 匾额式标题 */
+.brand-title {
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 17px; font-weight: 600; letter-spacing: 3px;
+  padding: 1px 8px; border: 1px solid var(--gold); border-radius: 3px;
+  color: var(--ink);
+}
+.brand-sub { font-size: 10px; color: var(--muted); letter-spacing: 1.5px; margin-top: 2px; }
+
+.search { flex: 1; max-width: 400px; position: relative; }
+.search input {
+  width: 100%; padding: 7px 12px 7px 32px;
+  background: var(--paper); border: 1px solid var(--line);
+  border-radius: 999px; outline: none;
+}
+.search input:focus { border-color: var(--gold); }
+.search .ico { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+.search .clear {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  color: var(--muted); font-size: 14px; display: none; padding: 2px 4px;
+}
+.search.has .clear { display: block; }
+
+.topbar-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+.count { font-size: 12px; color: var(--muted); }
+.count b { color: var(--indigo); font-weight: 600; }
+.icon-btn {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; color: var(--muted);
+}
+.icon-btn:hover { background: var(--paper); color: var(--ink); }
+
+/* ================= 主体 ================= */
+.main { flex: 1; display: flex; min-height: 0; z-index: 1; }
+
+/* 侧栏 */
+.side {
+  width: 174px; flex: none; background: var(--card);
+  border-right: 1px solid var(--line);
+  padding: 14px 10px; display: flex; flex-direction: column; gap: 2px;
+}
+.side-label { font-size: 10px; color: var(--muted); letter-spacing: 2px; padding: 6px 10px 8px; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+  border-radius: 8px; color: var(--ink-2); font-size: 13px;
+  position: relative; text-align: left; width: 100%;
+}
+.nav-item:hover { background: var(--paper); }
+.nav-item.on { background: var(--gold-soft); color: var(--ink); font-weight: 500; }
+.nav-item.on::before {
+  content: ""; position: absolute; left: 0; top: 8px; bottom: 8px;
+  width: 3px; background: var(--gold); border-radius: 2px;
+}
+.nav-item .n { margin-left: auto; font-size: 11px; color: var(--muted); }
+
+/* 八旗图例 */
+.flags-legend { margin-top: 14px; padding: 10px 10px 0; border-top: 1px solid var(--line-soft); }
+.flags-legend h4 { font-size: 10px; color: var(--muted); letter-spacing: 2px; font-weight: 500; margin-bottom: 8px; }
+.legend-row { display: flex; align-items: center; gap: 7px; padding: 2px 0; font-size: 11px; color: var(--ink-2); }
+.legend-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; border: 1px solid rgba(0,0,0,.12); }
+.legend-row .c { margin-left: auto; color: var(--muted); font-size: 10px; }
+.side-foot { margin-top: auto; padding: 10px; font-size: 10px; color: var(--muted); line-height: 1.8; }
+
+/* 曲库区 */
+.content { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.content-head { display: flex; align-items: center; gap: 10px; padding: 12px 20px 6px; }
+.content-head h2 { font-family: "Songti SC", "STSong", serif; font-size: 15px; font-weight: 600; letter-spacing: 1px; }
+.sorts { margin-left: auto; display: flex; gap: 4px; }
+.sorts button {
+  font-size: 12px; color: var(--muted); padding: 4px 9px;
+  border: 1px solid var(--line); border-radius: 6px; background: var(--card);
+}
+.sorts button.on { color: var(--indigo); border-color: var(--gold); background: var(--gold-soft); }
+
+/* 曲目表 */
+.list-wrap { flex: 1; overflow-y: auto; padding: 0 20px 16px; }
+.row-head, .row {
+  display: grid; grid-template-columns: 46px 1fr 128px 148px 52px 30px;
+  align-items: center; gap: 10px;
+}
+.row-head {
+  padding: 6px 10px; font-size: 10px; color: var(--muted);
+  border-bottom: 1px solid var(--line); letter-spacing: 1px;
+  position: sticky; top: 0; background: var(--paper); z-index: 2;
+}
+.row { padding: 7px 10px; border-radius: 8px; font-size: 13px; position: relative; }
+.row::after {
+  content: ""; position: absolute; left: 10px; right: 10px; bottom: 0; height: 1px;
+  background: var(--line-soft);
+}
+.row:hover { background: var(--card); }
+.row.playing { background: var(--gold-soft); }
+.row.playing .t-name { color: var(--indigo); font-weight: 600; }
+.row.dim { opacity: .45; }
+
+/* 旗色点 + 序号 */
+.flag { display: flex; align-items: center; gap: 6px; }
+.flag i { width: 9px; height: 9px; border-radius: 50%; display: block; border: 1px solid rgba(0,0,0,.12); flex: none; }
+.idx { font-size: 11px; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+.row.playing .idx { color: var(--gold); }
+.t-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.t-sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-2); font-size: 12px; }
+.t-dur { font-size: 12px; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+.fav { color: var(--line); font-size: 14px; text-align: center; line-height: 1; }
+.fav.on { color: var(--gold); }
+.empty, .loading { padding: 56px 0; text-align: center; color: var(--muted); font-size: 13px; }
+
+/* ================= 歌词栏（可竖排） ================= */
+.lyric { width: 274px; flex: none; background: var(--card); border-left: 1px solid var(--line); display: flex; flex-direction: column; }
+.lyric-head {
+  padding: 12px 16px 8px; font-size: 10px; color: var(--muted);
+  letter-spacing: 2px; border-bottom: 1px solid var(--line-soft);
+  display: flex; align-items: center;
+}
+.lyric-head .vbtn {
+  margin-left: auto; font-size: 10px; color: var(--muted);
+  border: 1px solid var(--line); border-radius: 5px; padding: 2px 7px; letter-spacing: 0;
+}
+.lyric-head .vbtn.on { color: var(--indigo); border-color: var(--gold); background: var(--gold-soft); }
+.lyric-body { flex: 1; overflow-y: auto; padding: 14px 16px; text-align: center; }
+.lyric-body p { font-size: 13px; line-height: 2.1; color: var(--muted); padding: 1px 0; transition: color .2s; }
+.lyric-body p.on { color: var(--ink); font-weight: 600; }
+/* 竖排：满文书写习惯（自上而下，自右而左） */
+.lyric-body.vertical {
+  writing-mode: vertical-rl; text-orientation: upright; text-align: left;
+  overflow-x: auto; overflow-y: hidden;
+}
+.lyric-body.vertical p { line-height: 2.4; letter-spacing: 2px; }
+.lyric-now { padding: 10px 16px; border-top: 1px solid var(--line-soft); }
+.lyric-now .n { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lyric-now .a { font-size: 11px; color: var(--muted); }
+
+/* ================= 播放条 ================= */
+.player {
+  flex: none; display: flex; align-items: center; gap: 16px;
+  padding: 10px 22px; background: var(--card);
+  border-top: 1px solid var(--line); z-index: 2;
+}
+
+/* 神鼓封面：播放时鼓面涟漪 */
+.cover {
+  width: 48px; height: 48px; flex: none; border-radius: 50%;
+  background: var(--paper) center/cover no-repeat;
+  border: 1px solid var(--line); position: relative;
+  display: flex; align-items: center; justify-content: center;
+}
+.cover svg { position: relative; z-index: 2; }
+.cover::before, .cover::after {
+  content: ""; position: absolute; inset: 0; border-radius: 50%;
+  border: 1px solid var(--gold); opacity: 0; pointer-events: none;
+}
+.playing .cover::before { animation: ripple 2.4s ease-out infinite; }
+.playing .cover::after  { animation: ripple 2.4s ease-out infinite 1.2s; }
+@keyframes ripple {
+  0%   { transform: scale(1);    opacity: .55; }
+  100% { transform: scale(1.75); opacity: 0; }
+}
+
+.now { width: 176px; min-width: 0; }
+.now .n { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.now .a { font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.ctrl { display: flex; align-items: center; gap: 5px; flex: none; }
+.ctrl button {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; color: var(--ink-2);
+}
+.ctrl button:hover { background: var(--paper); color: var(--indigo); }
+/* 播放键 = 萨满神鼓 */
+.ctrl .play { width: 40px; height: 40px; background: var(--indigo); color: #fff; border: 1px solid var(--gold); }
+.ctrl .play:hover { background: var(--ink); color: #fff; }
+.ctrl .mode.on { color: var(--gold); }
+
+/* 进度条：回纹刻度 + 金色游走点 */
+.bar { flex: 1; display: flex; align-items: center; gap: 10px; min-width: 0; }
+.time { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; flex: none; }
+.seek { flex: 1; height: 4px; background: var(--line); border-radius: 2px; position: relative; cursor: pointer; }
+.seek .fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--gold); border-radius: 2px; }
+.seek .fill::after {
+  content: ""; position: absolute; right: -5px; top: 50%;
+  width: 10px; height: 10px; margin-top: -5px; border-radius: 50%; background: var(--gold);
+}
+.seek::after {
+  content: ""; position: absolute; inset: 0; border-radius: 2px; pointer-events: none;
+  background-image: repeating-linear-gradient(90deg, rgba(0,0,0,.14) 0 1px, transparent 1px 9px);
+}
+.vol { display: flex; align-items: center; gap: 7px; flex: none; width: 106px; }
+.vol .seek { width: 66px; flex: none; }
+.vol .seek::after { display: none; }
+.vol .seek .fill { background: var(--indigo); }
+.vol .seek .fill::after { background: var(--indigo); }
+
+/* 提示 */
+.toast {
+  position: fixed; left: 50%; bottom: 86px; transform: translateX(-50%);
+  background: var(--ink); color: var(--paper); font-size: 13px;
+  padding: 8px 16px; border-radius: 999px; opacity: 0;
+  pointer-events: none; transition: opacity .25s; z-index: 50;
+}
+.toast.show { opacity: .95; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cover::before, .cover::after, .mountains .m2 { animation: none !important; transition: none !important; }
+}
+@media (max-width: 1080px) {
+  .lyric { display: none; }
+  .row-head, .row { grid-template-columns: 26px 1fr 118px 52px 30px; }
+  .row-head .c-album, .row .c-album { display: none; }
+}

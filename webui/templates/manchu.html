@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>满族音乐</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='manchu.css') }}">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- 白山黑水：满族发源地的层叠山形 -->
+  <div class="mountains" aria-hidden="true">
+    <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
+      <path class="m1" d="M0 92 L150 46 L260 74 L400 22 L520 62 L640 30 L780 70 L900 40 L1040 78 L1200 52 L1200 120 L0 120 Z" fill="var(--indigo)" opacity=".13"/>
+      <path class="m2" d="M0 106 L120 78 L280 100 L420 66 L560 96 L700 62 L860 94 L1000 72 L1140 98 L1200 84 L1200 120 L0 120 Z" fill="var(--indigo)" opacity=".2"/>
+    </svg>
+  </div>
+
+  <header class="topbar">
+    <div class="brand">
+      <!-- 海东青：满族神鹰，外环取萨满神鼓之形 -->
+      <svg width="34" height="34" viewBox="0 0 40 40" aria-hidden="true">
+        <circle cx="20" cy="20" r="18.2" fill="none" stroke="var(--indigo)" stroke-width="1"/>
+        <circle cx="20" cy="20" r="14.8" fill="none" stroke="var(--gold)" stroke-width=".6" stroke-dasharray="2 3"/>
+        <circle cx="20" cy="11.6" r="2.1" fill="var(--indigo)"/>
+        <path d="M7 18.4c4.4-4.4 8.8-6.4 13-6.4s8.6 2 13 6.4L20 25.2z" fill="var(--indigo)"/>
+        <path d="M18.2 25.2h3.6L20 29.6z" fill="var(--red)"/>
+      </svg>
+      <div class="brand-text">
+        <span class="brand-title">满族音乐</span>
+        <span class="brand-sub">MANCHU MUSIC · 白山黑水 · 八旗遗韵</span>
+      </div>
+    </div>
+
+    <div class="search">
+      <svg class="ico" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5 14 14" stroke-linecap="round"/>
+      </svg>
+      <input id="q" type="search" placeholder="搜索曲名、歌手、专辑  （/ 键聚焦）" autocomplete="off">
+      <button class="clear" title="清空">✕</button>
+    </div>
+
+    <div class="topbar-right">
+      <span class="count" id="count">载入中…</span>
+      <button class="icon-btn" id="btn-theme" title="昼夜切换">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3">
+          <circle cx="8" cy="8" r="3.4"/>
+          <path d="M8 1v1.6M8 13.4V15M1 8h1.6M13.4 8H15M3 3l1.1 1.1M11.9 11.9 13 13M13 3l-1.1 1.1M4.1 11.9 3 13" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="main">
+
+    <aside class="side">
+      <div class="side-label">曲 库</div>
+      <button class="nav-item on" data-tab="all"><span>全部曲目</span><span class="n" id="n-all">0</span></button>
+      <button class="nav-item" data-tab="fav"><span>我的收藏</span><span class="n" id="n-fav">0</span></button>
+      <button class="nav-item" data-tab="queue"><span>正在播放</span><span class="n" id="n-queue">0</span></button>
+
+      <!-- 八旗图例：音源与旗色的对应 -->
+      <div class="flags-legend">
+        <h4>八 旗 · 音 源</h4>
+        <div id="legend"></div>
+      </div>
+
+      <div class="side-foot">
+        <p>空格 播放／暂停<br>← → 上一首／下一首<br>/ 搜索</p>
+      </div>
+    </aside>
+
+    <section class="content">
+      <div class="content-head">
+        <h2>满族音乐</h2>
+        <div class="sorts">
+          <button class="on" data-sort="default">默认</button>
+          <button data-sort="name">按曲名</button>
+          <button data-sort="dur">按时长</button>
+        </div>
+      </div>
+      <div class="list-wrap">
+        <div class="row-head">
+          <div></div>
+          <div>曲名</div>
+          <div>歌手</div>
+          <div class="c-album">专辑</div>
+          <div class="t-dur">时长</div>
+          <div></div>
+        </div>
+        <div id="list"></div>
+      </div>
+    </section>
+
+    <aside class="lyric">
+      <div class="lyric-head">
+        <span>词</span>
+        <button class="vbtn" id="btn-vertical" title="按满文书写习惯竖排显示">竖排</button>
+      </div>
+      <div class="lyric-body" id="lyric-body"><p>播放后显示歌词</p></div>
+      <div class="lyric-now">
+        <div class="n" id="lyric-now-n">—</div>
+        <div class="a" id="lyric-now-a">未播放</div>
+      </div>
+    </aside>
+
+  </div>
+
+  <footer class="player">
+    <!-- 萨满神鼓：播放时鼓面泛起涟漪 -->
+    <div class="cover" id="cover">
+      <svg width="24" height="24" viewBox="0 0 40 40" aria-hidden="true">
+        <circle cx="20" cy="11.6" r="2.1" fill="var(--indigo)"/>
+        <path d="M7 18.4c4.4-4.4 8.8-6.4 13-6.4s8.6 2 13 6.4L20 25.2z" fill="var(--indigo)"/>
+        <path d="M18.2 25.2h3.6L20 29.6z" fill="var(--red)"/>
+      </svg>
+    </div>
+
+    <div class="now">
+      <div class="n" id="now-name">未播放</div>
+      <div class="a" id="now-artist">从上方列表选一首</div>
+    </div>
+
+    <div class="ctrl">
+      <button id="btn-prev" title="上一首">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M14 3.5v9L7.5 8z"/><path d="M4.2 3.5h1.7v9H4.2z"/>
+        </svg>
+      </button>
+      <button id="btn-play" class="play" title="播放/暂停"></button>
+      <button id="btn-next" title="下一首">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M2 3.5v9L8.5 8z"/><path d="M10.1 3.5h1.7v9h-1.7z"/>
+        </svg>
+      </button>
+      <button id="btn-mode" class="mode" title="顺序播放">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor"
+             stroke-width="1.5" stroke-linecap="round">
+          <path d="M3 8a5 5 0 1 1 1.7 3.8"/><path d="M3 4.4V8h3.6"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="bar">
+      <span class="time" id="t-cur">0:00</span>
+      <div class="seek" id="seek"><div class="fill"></div></div>
+      <span class="time" id="t-all">0:00</span>
+    </div>
+
+    <div class="vol">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M3 6h2l3-2.4v8.8L5 10H3z"/>
+      </svg>
+      <div class="seek" id="vol"><div class="fill"></div></div>
+    </div>
+  </footer>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="{{ url_for('static', filename='manchu.js') }}"></script>
+</body>
+</html>
